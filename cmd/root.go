@@ -44,6 +44,10 @@ func checkTerraformDir(dir string) error {
 			return err
 		}
 
+		if info.IsDir() && info.Name() == "modules" {
+			return filepath.SkipDir
+		}
+
 		if !info.IsDir() && strings.HasSuffix(info.Name(), ".tf") {
 			checkParentDirReference(path)
 		}
