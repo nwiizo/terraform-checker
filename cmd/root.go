@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -17,12 +16,9 @@ func isEnvMainTf(path string) bool {
 }
 
 func checkParentDirReference(file string) {
-	if isEnvMainTf(file) {
-		fmt.Printf("Skipping environment-specific main.tf: %s\n", file)
-		return
-	}
+	isEnvironmentMain := isEnvMainTf(file)
 
-	content, err := ioutil.ReadFile(file)
+	content, err := os.ReadFile(file)
 	if err != nil {
 		fmt.Printf("Error reading file: %s\n", file)
 		return
@@ -32,9 +28,14 @@ func checkParentDirReference(file string) {
 	matches := re.FindAllStringIndex(string(content), -1)
 
 	if len(matches) > 0 {
-		fmt.Printf("Parent directory reference found in file: %s\n", file)
-	} else {
-		fmt.Printf("No parent directory reference found in file: %s\n", file)
+		if isEnvironmentMain && strings.Contains(string(content), "../../modules") {
+			fmt.Printf(
+				"Permitted parent directory reference found in environment-specific main.tf: %s\n",
+				file,
+			)
+		} else {
+			fmt.Printf("Parent directory reference found in file: %s\n", file)
+		}
 	}
 }
 
